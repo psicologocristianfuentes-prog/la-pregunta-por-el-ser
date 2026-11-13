@@ -291,9 +291,9 @@ const QUIZ = [
 
 const AGENDA = [
   {fase:"apertura", nom:"Introducción: ¿qué es el «es»?", min:3, quien:"Presentador"},
-  {fase:"reparto", nom:"Abrir el enlace y elegir estación", min:1, quien:"Todos"},
-  {fase:"estudio", nom:"Estudio en parejas", min:6, quien:"Parejas"},
-  {fase:"exposicion", nom:"Exposición: 1 min por estación", min:9, quien:"Parejas, en orden"},
+  {fase:"reparto", nom:"Abrir el enlace y unirse al sorteo", min:1, quien:"Todos"},
+  {fase:"estudio", nom:"Estudio por estación", min:6, quien:"Cada estación"},
+  {fase:"exposicion", nom:"Exposición: 1 min por estación", min:9, quien:"Cada estación, en orden"},
   {fase:"sintesis", nom:"Síntesis: la luz y el Dasein", min:2, quien:"Presentador"},
   {fase:"quiz", nom:"Quiz individual", min:3, quien:"Todos"},
   {fase:"cierre", nom:"Cierre y pregunta para llevarse", min:2, quien:"Presentador"}
@@ -301,11 +301,35 @@ const AGENDA = [
 
 /* ---------- estado local ---------- */
 const CLAVE = "el-ser-dinamica-v1";
-let S = {nick:"", est:null, vista:"inicio", prep:{}, check:{}, qi:0, qr:[], abiertos:{}};
+let S = {nick:"", est:null, vista:"inicio", prep:{}, check:{}, qi:0, qr:[], abiertos:{}, sorteo:null, borrador:null, fac:null};
 try{ const g = JSON.parse(localStorage.getItem(CLAVE)||"null"); if(g) S = Object.assign(S, g); }catch(e){}
 function guardar(){ try{ localStorage.setItem(CLAVE, JSON.stringify(S)); }catch(e){} }
 
 let sala = null, pares = [], ultimaFase = null;
+
+/* ---------- sorteo sin conexión: mismo código + número = misma estación en todos los teléfonos ---------- */
+const PRIORIDAD = [4,0,6,2,5,1,3]; // si hay menos de 7 personas, se cubren primero estas estaciones
+function asignacion(n, semilla){
+  const L = []; for(let i=0;i<n;i++) L.push(PRIORIDAD[i%PRIORIDAD.length]);
+  let a = (semilla*7919 + n*104729) >>> 0;
+  const rnd = ()=>{ a|=0; a=a+0x6D2B79F5|0; let t=Math.imul(a^a>>>15,1|a); t=t+Math.imul(t^t>>>7,61|t)^t; return ((t^t>>>14)>>>0)/4294967296; };
+  for(let i=L.length-1;i>0;i--){ const j=Math.floor(rnd()*(i+1)); const x=L[i]; L[i]=L[j]; L[j]=x; }
+  return L; // L[k-1] = estación del número k
+}
+function leerCodigo(txt){
+  const d = String(txt||"").replace(/\D/g,"");
+  if(d.length!==6) return null;
+  const n = +d.slice(0,2), semilla = +d.slice(2);
+  return (n>=1 && n<=40) ? {n, semilla} : null;
+}
+const fmtCodigo = (n,s) => String(n).padStart(2,"0")+"-"+String(s).padStart(4,"0");
+function miGrupo(){
+  if(!S.sorteo) return null;
+  const c = leerCodigo(S.sorteo.code); if(!c || !(S.sorteo.num>=1 && S.sorteo.num<=c.n)) return null;
+  const L = asignacion(c.n, c.semilla), est = L.at(S.sorteo.num-1);
+  const nums = []; L.forEach((e,i)=>{ if(e===est) nums.push(i+1); });
+  return {est, nums, idx:nums.indexOf(S.sorteo.num)};
+}
 const F = {i:0, corriendo:false, fin:0, resto:AGENDA[0].min*60, foco:null};
 
 const $ = s => document.querySelector(s);
@@ -323,38 +347,74 @@ document.querySelectorAll("nav [data-ir]").forEach(b=>b.addEventListener("click"
 /* ---------- vistas ---------- */
 function vInicio(){
   const cuenta = i => pares.filter(p=>p.presence && p.presence.est===i).length;
+  const g = miGrupo();
+  const otros = g ? g.nums.filter(x=>x!==S.sorteo.num) : [];
   return `<section class="vista pila">
     <div class="pila" style="gap:8px">
       <h1>La pregunta por el Ser</h1>
-      <p class="tenue">De los griegos a la inteligencia artificial, en siete estaciones. Cada pareja aprende una estación y la explica al grupo en un minuto.</p>
+      <p class="tenue">De los griegos a la inteligencia artificial, en siete estaciones. Cada persona o grupo aprende una estación y la explica a los demás en un minuto.</p>
     </div>
     <div class="tarjeta pila">
       <div><label for="nick">Tu nombre</label>
       <input id="nick" type="text" autocomplete="given-name" maxlength="24" placeholder="Ej.: Camila" value="${esc(S.nick)}"></div>
-      <div>
-        <div class="etiqueta">Elige tu estación</div>
-        <p class="tenue pequeno" style="margin-bottom:10px">Dos personas por estación. Con 12 personas: cinco estaciones en pareja y dos individuales.</p>
-        <div class="estaciones">
+      ${g ? `<div class="tarjeta luz pila" style="gap:8px">
+          <div class="etiqueta">Tu estación por sorteo</div>
+          <h3>${g.est+1}. ${esc(ESTACIONES[g.est].nom)}</h3>
+          <p>${otros.length ? `Trabajas con ${otros.length===1?"el número":"los números"} <b>${otros.join(", ")}</b>. Búsquense en la sala.` : "Trabajas solo: tienes el minuto completo para ti."}</p>
+          <p class="tenue pequeno">Código ${esc(S.sorteo.code)} · tu número ${S.sorteo.num}</p>
+        </div>
+        <div class="fila">
+          <button type="button" class="boton sec" id="salirSorteo">Cambiar código o número</button>
+          <button type="button" class="boton" id="empezar">Ir a mi estación</button>
+        </div>`
+      : `<div class="pila" style="gap:10px">
+          <div class="etiqueta">Únete al sorteo</div>
+          <p class="tenue pequeno">Quien presenta muestra un código. Escríbelo junto al número que te tocó (1, 2, 3…). Nadie repite estación de más y los grupos quedan parejos.</p>
+          <div class="fila">
+            <div><label for="codigo">Código</label><input id="codigo" type="text" inputmode="numeric" autocomplete="off" maxlength="7" placeholder="12-4831" value="${esc(S.borrador&&S.borrador.code||"")}"></div>
+            <div><label for="numero">Tu número</label><input id="numero" type="text" inputmode="numeric" autocomplete="off" maxlength="2" placeholder="5" value="${esc(S.borrador&&S.borrador.num||"")}"></div>
+          </div>
+          <p id="errorSorteo" class="pequeno" style="color:var(--mal)" role="alert"></p>
+          <button type="button" class="boton" id="unirse">Ver mi estación</button>
+        </div>`}
+      <details>
+        <summary class="tenue pequeno" style="cursor:pointer">Sin sorteo: elegir la estación a mano</summary>
+        <div class="estaciones" style="margin-top:10px">
           ${ESTACIONES.map((e,i)=>`<button type="button" class="estacion-b" data-est="${i}" aria-pressed="${S.est===i}">
             <span class="num">${i+1}</span><span class="nom">${esc(e.nom)}</span>
             <span class="cuantos">${esc(e.epoca)}${sala?` · ${cuenta(i)} aquí`:""}</span></button>`).join("")}
         </div>
-      </div>
-      <div class="fila">
-        <button type="button" class="boton sec" id="azar">Elegir al azar</button>
-        <button type="button" class="boton" id="empezar">Ir a mi estación</button>
-      </div>
+      </details>
     </div>
     <div class="tarjeta luz">
       <div class="etiqueta">Cómo funciona</div>
       <ul class="lista">
-        <li><b>6 min:</b> estudien su tarjeta y repartan los roles A y B.</li>
-        <li><b>1 min por pareja:</b> expliquen su estación al grupo, en orden del 1 al 7.</li>
+        <li><b>6 min:</b> estudien su tarjeta y repartan los roles (o hazlos todos si estás solo).</li>
+        <li><b>1 min por estación:</b> expliquen su estación al grupo, en orden del 1 al 7.</li>
         <li><b>3 min:</b> quiz final individual para comprobar lo aprendido.</li>
       </ul>
     </div>
     <button type="button" id="aFacil" class="tenue pequeno" style="background:none;border:none;text-align:center">Soy quien presenta: abrir el modo presentador</button>
   </section>`;
+}
+
+function rolesHTML(e, prep){
+  const g = miGrupo(), mio = g && g.est===S.est;
+  const n = mio ? g.nums.length : 0, yo = mio ? g.idx : -1;
+  const letra = ["A","B","C","D","E","F"];
+  let aviso = "";
+  if(!mio) aviso = "Si estás solo, haz todas las partes. Si son dos, repartan A y B; si son tres, sumen la C.";
+  else if(n===1) aviso = "Trabajas solo: haces todas las partes en tu minuto.";
+  else aviso = `Son ${n}. Tú eres la persona <b>${letra.at(Math.min(yo,5))}</b> (el número más bajo es A).`;
+  const tres = !mio || n>=3;
+  const items = [
+    {k:"a", t:n===1?"Primero (30 s)":"Persona A (" + (tres&&n>=3?"20":"30") + " s)", d:e.rolA},
+    {k:"b", t:n===1?"Después (30 s)":"Persona B (" + (tres&&n>=3?"20":"30") + " s)", d:e.rolB},
+  ];
+  if(mio && n>=3) items.push({k:"c", t:"Persona C (20 s)", d:"Hace la pregunta al grupo y cierra con el puente: " + e.puente});
+  else items.push({k:"c", t:"Para terminar", d:e.puente});
+  if(mio && n>=4) items.push({k:"d", t:"Personas D en adelante", d:"Aportan un ejemplo propio de la vida cotidiana (máximo 15 s cada una)."});
+  return `<p class="pequeno">${aviso}</p><div class="roles">${items.map(it=>`<label class="rol"><input type="checkbox" data-prep="${it.k}" ${prep[it.k]?"checked":""}><span><b>${esc(it.t)}:</b> ${esc(it.d)}</span></label>`).join("")}</div>`;
 }
 
 function vEstacion(){
@@ -374,12 +434,8 @@ function vEstacion(){
     <div class="tarjeta"><div class="etiqueta">Pregunta para el grupo</div><p style="font-weight:600">${esc(e.pregunta)}</p></div>
     <div class="tarjeta pila">
       <div class="etiqueta">Su minuto de exposición</div>
-      <div class="roles">
-        <label class="rol"><input type="checkbox" data-prep="a" ${prep.a?"checked":""}><span><b>Persona A (30 s):</b> ${esc(e.rolA)}</span></label>
-        <label class="rol"><input type="checkbox" data-prep="b" ${prep.b?"checked":""}><span><b>Persona B (30 s):</b> ${esc(e.rolB)}</span></label>
-        <label class="rol"><input type="checkbox" data-prep="c" ${prep.c?"checked":""}><span><b>Para terminar:</b> ${esc(e.puente)}</span></label>
-      </div>
-      <p class="tenue pequeno">Marquen cada rol cuando lo tengan ensayado.</p>
+      ${rolesHTML(e, prep)}
+      <p class="tenue pequeno">Marquen cada parte cuando la tengan ensayada.</p>
     </div>
     <div class="tarjeta">
       <div class="etiqueta">Comprueben que lo tienen claro</div>
@@ -390,7 +446,7 @@ function vEstacion(){
           let cls="opcion"; if(r!==undefined){ if(oi===q.c) cls+=" correcta"; else if(oi===r) cls+=" incorrecta"; }
           return `<button type="button" class="${cls}" data-ck="${qi}" data-op="${oi}" ${r!==undefined?"disabled":""}>${esc(o)}</button>`;
         }).join("")}</div>
-        ${r!==undefined?`<p class="retro">${r===q.c?'<b class="ok">Correcto.</b>':'<b class="no">Casi.</b> Repasen la tarjeta.'}</p>`:""}</div>`;
+        ${r!==undefined?`<p class="retro">${r===q.c?'<b class="ok">Correcto.</b>':'<b class="no">Casi.</b> Repasa la tarjeta.'}</p>`:""}</div>`;
       }).join("")}
     </div>
     <button type="button" class="boton sec" data-ir2="linea">Ver la línea completa</button>
@@ -400,7 +456,7 @@ function vEstacion(){
 function vLinea(){
   return `<section class="vista pila">
     <div class="pila" style="gap:6px"><h1>La línea del Ser</h1>
-    <p class="tenue">Síganla mientras cada pareja expone. Toquen una estación para ver su idea clave.</p></div>
+    <p class="tenue">Síganla mientras cada estación expone. Toquen una estación para ver su idea clave.</p></div>
     <div class="linea-t">
       ${ESTACIONES.map((e,i)=>`<div class="hito ${F.foco===i?"foco":""} ${S.abiertos[i]?"abierto":""}">
         <button type="button" class="tarjeta" data-hito="${i}" aria-expanded="${!!S.abiertos[i]}">
@@ -417,7 +473,7 @@ function vQuiz(){
   const n = QUIZ.length;
   if(S.qi>=n){
     const p = puntaje();
-    const msj = p>=n*0.85?"Excelente: tienes clara la historia del Ser.":p>=n*0.6?"Muy bien: repasa en la línea las preguntas que fallaste.":"Buen comienzo: vuelve a la línea y conversa con tu pareja.";
+    const msj = p>=n*0.85?"Excelente: tienes clara la historia del Ser.":p>=n*0.6?"Muy bien: repasa en la línea las preguntas que fallaste.":"Buen comienzo: vuelve a la línea y conversa con tu grupo.";
     return `<section class="vista pila"><div class="etiqueta">Resultado</div>
       <div class="puntaje">${p}<span style="font-size:1.6rem" class="tenue"> / ${n}</span></div>
       <p>${msj}</p>
@@ -454,6 +510,25 @@ function vCierre(){
   </section>`;
 }
 
+function tarjetaSorteo(){
+  const s = S.fac;
+  if(!s) return `<div class="tarjeta pila"><div class="etiqueta">Sorteo de estaciones</div>
+    <p class="tenue pequeno">Escribe cuántas personas hay (sin contarte). Cada una recibe un número del 1 al total, por ejemplo según dónde está sentada.</p>
+    <div class="fila"><div><label for="nPers">Personas</label><input id="nPers" type="text" inputmode="numeric" maxlength="2" value="12"></div>
+    <button type="button" class="boton" id="sortear" style="align-self:flex-end">Generar sorteo</button></div></div>`;
+  const L = asignacion(s.n, s.semilla);
+  const porEst = ESTACIONES.map((_,i)=>{ const nums=[]; L.forEach((e,k)=>{ if(e===i) nums.push(k+1); }); return nums; });
+  const sinCubrir = porEst.map((x,i)=>x.length?-1:i).filter(i=>i>=0);
+  return `<div class="tarjeta pila"><div class="etiqueta">Sorteo de estaciones · ${s.n} personas</div>
+    <p class="tenue pequeno">Muestra este código. Cada persona lo escribe junto a su número.</p>
+    <div class="reloj" style="font-size:3.2rem;letter-spacing:.04em">${fmtCodigo(s.n,s.semilla)}</div>
+    <table><thead><tr><th>Estación</th><th>Números</th></tr></thead><tbody>
+      ${porEst.map((x,i)=>`<tr><td>${i+1}. ${esc(ESTACIONES[i].nom)}</td><td>${x.length?x.join(", "):'<span class="tenue">la explicas tú</span>'}</td></tr>`).join("")}
+    </tbody></table>
+    ${sinCubrir.length?`<p class="pequeno">Con menos de 7 personas, tú explicas en 30 segundos las estaciones sin asignar.</p>`:""}
+    <button type="button" class="boton sec" id="reSorteo">Nuevo sorteo</button></div>`;
+}
+
 function vFacil(){
   const a = AGENDA[F.i];
   const mm = Math.max(0,Math.ceil(F.resto)), m = Math.floor(mm/60), s = String(mm%60).padStart(2,"0");
@@ -470,6 +545,7 @@ function vFacil(){
     ${a.fase==="exposicion"?`<div class="tarjeta"><div class="etiqueta">¿Quién expone ahora?</div><div class="estaciones">
       ${ESTACIONES.map((e,i)=>`<button type="button" class="estacion-b" data-foco="${i}" aria-pressed="${F.foco===i}"><span class="num">${i+1}</span><span class="nom">${esc(e.nom)}</span></button>`).join("")}
       </div><p class="tenue pequeno" style="margin-top:8px">${sala?"Los teléfonos conectados resaltan la estación en su línea.":"Toca la estación para resaltarla en tu pantalla."}</p></div>`:""}
+    ${tarjetaSorteo()}
     <div class="tarjeta"><div class="etiqueta">Agenda</div><div class="agenda">
       ${AGENDA.map((x,i)=>`<button type="button" data-fase="${i}" ${i===F.i?'aria-current="step"':""}><span>${esc(x.nom)}</span><span class="min">${x.min} min</span></button>`).join("")}
     </div></div>
@@ -494,13 +570,19 @@ function enlazar(){
   document.querySelectorAll("[data-ir2]").forEach(b=>b.onclick=()=>ir(b.dataset.ir2));
   const nick = $("#nick");
   if(nick) nick.oninput = ()=>{ S.nick = nick.value.trim(); guardar(); presencia(); };
-  document.querySelectorAll("[data-est]").forEach(b=>b.onclick=()=>{ S.est=+b.dataset.est; guardar(); presencia(); render(); });
-  const azar = $("#azar");
-  if(azar) azar.onclick=()=>{
-    const c = ESTACIONES.map((_,i)=>pares.filter(p=>p.presence&&p.presence.est===i&&!p.isMe).length);
-    const min = Math.min(...c), libres = c.map((x,i)=>x===min?i:-1).filter(i=>i>=0);
-    S.est = libres[Math.floor(Math.random()*libres.length)]; guardar(); presencia(); render();
+  document.querySelectorAll("[data-est]").forEach(b=>b.onclick=()=>{ S.est=+b.dataset.est; S.sorteo=null; guardar(); presencia(); render(); });
+  const cod = $("#codigo"), num = $("#numero");
+  if(cod) cod.oninput = ()=>{ S.borrador = Object.assign(S.borrador||{}, {code:cod.value}); guardar(); };
+  if(num) num.oninput = ()=>{ S.borrador = Object.assign(S.borrador||{}, {num:num.value}); guardar(); };
+  const un = $("#unirse");
+  if(un) un.onclick = ()=>{
+    const err = $("#errorSorteo"), c = leerCodigo(cod.value), k = parseInt(num.value,10);
+    if(!c){ err.textContent = "El código tiene 6 números, por ejemplo 12-4831. Revísalo con quien presenta."; return; }
+    if(!(k>=1 && k<=c.n)){ err.textContent = `Tu número debe estar entre 1 y ${c.n}.`; return; }
+    S.sorteo = {code:fmtCodigo(c.n,c.semilla), num:k};
+    S.est = miGrupo().est; guardar(); presencia(); render();
   };
+  const ss = $("#salirSorteo"); if(ss) ss.onclick = ()=>{ S.sorteo = null; guardar(); render(); };
   const emp = $("#empezar"); if(emp) emp.onclick=()=>{ if(S.est===null){ emp.textContent="Primero elige una estación"; return; } ir("estacion"); };
   const af = $("#aFacil"); if(af) af.onclick=()=>ir("facilitador");
   document.querySelectorAll("[data-prep]").forEach(c=>c.onchange=()=>{ const k=S.est; S.prep[k]=S.prep[k]||{}; S.prep[k][c.dataset.prep]=c.checked; guardar(); });
@@ -512,6 +594,9 @@ function enlazar(){
   const rb = $("#relojBtn"); if(rb) rb.onclick=()=>{ if(F.corriendo){ F.resto = (F.fin-Date.now())/1000; F.corriendo=false; } else { F.fin = Date.now()+F.resto*1000; F.corriendo=true; } difundir(); render(); };
   const fs = $("#faseSig"); if(fs) fs.onclick=()=>fijarFase(Math.min(F.i+1, AGENDA.length-1));
   document.querySelectorAll("[data-fase]").forEach(b=>b.onclick=()=>fijarFase(+b.dataset.fase));
+  const so = $("#sortear");
+  if(so) so.onclick = ()=>{ const n = parseInt($("#nPers").value,10); if(!(n>=1&&n<=40)){ $("#nPers").value="12"; return; } S.fac = {n, semilla:1000+Math.floor(Math.random()*9000)}; guardar(); render(); };
+  const rs = $("#reSorteo"); if(rs) rs.onclick = ()=>{ S.fac = null; guardar(); render(); };
   document.querySelectorAll("[data-foco]").forEach(b=>b.onclick=()=>{ F.foco = +b.dataset.foco; difundir(); render(); });
 }
 
