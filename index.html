@@ -1,0 +1,588 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>La pregunta por el Ser</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,600;0,700;1,600&family=Source+Sans+3:wght@400;600;700&display=swap" rel="stylesheet">
+<style>
+/* Una habitación a oscuras con una lámpara: los entes aparecen gracias a la luz (el Ser). Un solo tema, oscuro, a propósito. */
+:root{
+  --noche:#121624;
+  --superficie:#1b2133;
+  --superficie-2:#232a40;
+  --linea:#323b58;
+  --texto:#efe9dc;
+  --tenue:#aaa597;
+  --luz:#f2b544;
+  --luz-suave:rgba(242,181,68,.13);
+  --bien:#86cfa6;
+  --mal:#ec9482;
+  --display:"Cormorant Garamond", "Iowan Old Style", Georgia, serif;
+  --cuerpo:"Source Sans 3", "Segoe UI", system-ui, sans-serif;
+  color-scheme:dark;
+}
+*{box-sizing:border-box}
+html,body{margin:0;min-height:100%}
+body{
+  background:var(--noche);
+  background-image:radial-gradient(ellipse 90% 340px at 50% -60px, rgba(242,181,68,.20), transparent 70%);
+  background-repeat:no-repeat;
+  color:var(--texto);font-family:var(--cuerpo);font-size:17px;line-height:1.5;
+  padding-bottom:84px;
+}
+.envoltura{max-width:620px;margin:0 auto;padding:18px 18px 24px}
+h1,h2,h3{font-family:var(--display);font-weight:700;line-height:1.1;text-wrap:balance;margin:0}
+h1{font-size:2.15rem}
+h2{font-size:1.75rem}
+h3{font-size:1.25rem}
+p{margin:0}
+.pila{display:flex;flex-direction:column;gap:14px}
+.cabecera{display:flex;justify-content:space-between;align-items:center;gap:10px;margin-bottom:6px}
+.marca{font-family:var(--display);font-style:italic;font-size:1.05rem;color:var(--luz)}
+.chip{display:inline-flex;align-items:center;gap:6px;font-size:.8rem;font-weight:600;padding:4px 10px;border-radius:999px;border:1px solid var(--linea);color:var(--tenue);background:var(--superficie)}
+.chip.vivo{border-color:var(--luz);color:var(--luz)}
+.chip .punto{width:7px;height:7px;border-radius:50%;background:currentColor}
+.tenue{color:var(--tenue)}
+.pequeno{font-size:.88rem}
+.tarjeta{background:var(--superficie);border:1px solid var(--linea);border-radius:14px;padding:16px}
+.tarjeta.luz{background:var(--luz-suave);border-color:rgba(242,181,68,.55)}
+.etiqueta{font-size:.74rem;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--luz);margin-bottom:6px}
+.termino{font-family:var(--display);font-style:italic;font-size:1.15rem;color:var(--luz)}
+ul.lista{margin:0;padding-left:1.1em;display:flex;flex-direction:column;gap:6px}
+blockquote{margin:0;font-family:var(--display);font-size:1.3rem;font-style:italic;line-height:1.25}
+blockquote cite{display:block;margin-top:6px;font-family:var(--cuerpo);font-style:normal;font-size:.85rem;color:var(--tenue)}
+label{font-weight:600;font-size:.92rem}
+input[type=text]{width:100%;margin-top:6px;font:inherit;color:var(--texto);background:var(--superficie-2);border:1px solid var(--linea);border-radius:10px;padding:12px}
+input[type=text]:focus-visible,button:focus-visible{outline:2px solid var(--luz);outline-offset:2px}
+button{font:inherit;cursor:pointer;border-radius:12px;border:1px solid var(--linea);background:var(--superficie-2);color:var(--texto);padding:12px 14px;text-align:left}
+button:hover{border-color:var(--tenue)}
+.boton{background:var(--luz);color:#1b1505;border-color:var(--luz);font-weight:700;text-align:center}
+.boton:hover{filter:brightness(1.07);border-color:var(--luz)}
+.boton.sec{background:transparent;color:var(--luz)}
+.fila{display:flex;gap:10px;flex-wrap:wrap}
+.fila>*{flex:1 1 140px}
+.estaciones{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.estacion-b{display:flex;flex-direction:column;gap:2px;min-height:96px}
+.estacion-b .num{font-family:var(--display);font-size:1.6rem;color:var(--luz);line-height:1}
+.estacion-b .nom{font-weight:700;font-size:.95rem;line-height:1.2}
+.estacion-b .cuantos{font-size:.78rem;color:var(--tenue);margin-top:auto}
+.estacion-b[aria-pressed=true]{border-color:var(--luz);background:var(--luz-suave)}
+.roles{display:grid;gap:10px}
+.rol{display:flex;gap:10px;align-items:flex-start}
+.rol input{width:22px;height:22px;margin-top:2px;accent-color:var(--luz);flex:none}
+.opciones{display:flex;flex-direction:column;gap:8px;margin-top:10px}
+.opcion.correcta{border-color:var(--bien);background:rgba(134,207,166,.12)}
+.opcion.incorrecta{border-color:var(--mal);background:rgba(236,148,130,.10)}
+.opcion:disabled{cursor:default;opacity:1;color:var(--texto)}
+.retro{margin-top:10px;font-size:.93rem}
+.retro b.ok{color:var(--bien)} .retro b.no{color:var(--mal)}
+.linea-t{position:relative;display:flex;flex-direction:column;gap:12px;padding-left:22px}
+.linea-t::before{content:"";position:absolute;left:7px;top:6px;bottom:6px;width:2px;background:var(--linea)}
+.hito{position:relative}
+.hito::before{content:"";position:absolute;left:-20px;top:20px;width:12px;height:12px;border-radius:50%;background:var(--noche);border:2px solid var(--tenue)}
+.hito.foco::before{background:var(--luz);border-color:var(--luz);box-shadow:0 0 12px var(--luz)}
+.hito.foco .tarjeta{border-color:var(--luz)}
+.hito button{width:100%}
+.hito .detalle{margin-top:10px;display:none}
+.hito.abierto .detalle{display:block}
+.aviso{position:sticky;top:8px;z-index:5;background:var(--luz);color:#1b1505;border-radius:12px;padding:10px 14px;font-weight:700;display:flex;justify-content:space-between;gap:10px;align-items:center}
+.aviso button{background:#1b1505;color:var(--luz);border:none;padding:6px 12px;text-align:center;font-weight:700}
+nav.inferior{position:fixed;left:0;right:0;bottom:0;background:rgba(18,22,36,.96);border-top:1px solid var(--linea);display:flex;justify-content:center;padding:8px 8px calc(8px + env(safe-area-inset-bottom));z-index:10}
+nav.inferior .grupo{display:flex;gap:6px;max-width:620px;width:100%}
+nav.inferior button{flex:1;text-align:center;padding:9px 4px;font-size:.82rem;font-weight:600;border:none;background:transparent;color:var(--tenue)}
+nav.inferior button[aria-current=page]{color:var(--luz);background:var(--luz-suave)}
+.progreso{height:6px;background:var(--superficie-2);border-radius:99px;overflow:hidden}
+.progreso span{display:block;height:100%;background:var(--luz)}
+.puntaje{font-family:var(--display);font-size:3.4rem;color:var(--luz);line-height:1}
+.reloj{font-family:var(--display);font-size:4rem;line-height:1;font-variant-numeric:tabular-nums;color:var(--luz)}
+.agenda{display:flex;flex-direction:column;gap:8px}
+.agenda button{display:flex;justify-content:space-between;gap:10px;align-items:center}
+.agenda button[aria-current=step]{border-color:var(--luz);background:var(--luz-suave)}
+.agenda .min{font-variant-numeric:tabular-nums;color:var(--tenue);font-size:.88rem;flex:none}
+table{width:100%;border-collapse:collapse;font-size:.92rem}
+th,td{text-align:left;padding:7px 6px;border-bottom:1px solid var(--linea)}
+th{color:var(--tenue);font-weight:600}
+td.n{font-variant-numeric:tabular-nums;text-align:right}
+.oculto{display:none!important}
+@media (prefers-reduced-motion:no-preference){
+  .vista{animation:aparecer .35s ease both}
+  @keyframes aparecer{from{opacity:.4;transform:translateY(6px)}to{opacity:1;transform:none}}
+}
+</style>
+</head>
+<body>
+<div class="envoltura">
+  <div class="cabecera">
+    <span class="marca">¿Por qué hay algo y no nada?</span>
+    <span id="estadoSala" class="chip"><span class="punto"></span><span id="estadoTexto">Modo individual</span></span>
+  </div>
+  <div id="aviso" class="aviso oculto" role="status"><span id="avisoTexto"></span><button id="avisoIr" type="button">Ir</button></div>
+  <main id="app"></main>
+</div>
+<nav class="inferior" aria-label="Secciones">
+  <div class="grupo">
+    <button type="button" data-ir="inicio">Inicio</button>
+    <button type="button" data-ir="estacion">Mi estación</button>
+    <button type="button" data-ir="linea">Línea</button>
+    <button type="button" data-ir="quiz">Quiz</button>
+    <button type="button" data-ir="cierre">Cierre</button>
+  </div>
+</nav>
+
+<script>
+const ESTACIONES = [
+  {
+    nom:"Los presocráticos", epoca:"Siglos VI–V a. C.", termino:"ἀρχή · arjé, el principio",
+    idea:"Todo lo que existe viene de un principio. La gran duda: ¿el ser es lo que cambia o lo que permanece?",
+    puntos:[
+      "Desde el asombro, buscaron el arjé: aquello de lo que proviene todo.",
+      "Tales: todo viene del agua. Anaximandro: de lo ilimitado (ápeiron).",
+      "Heráclito: todo fluye; el ser es cambio.",
+      "Parménides: el ser es uno, eterno e inmóvil; el cambio es apariencia."
+    ],
+    ejemplo:"Mira una foto tuya de los 5 años. Heráclito diría que en ti todo cambió; Parménides, que algo tuyo sigue siendo lo mismo.",
+    frase:"No es posible bañarse dos veces en el mismo río.", autor:"Heráclito",
+    pregunta:"¿Qué hay en ustedes que no ha cambiado desde que eran niños?",
+    rolA:"Expliquen qué es el arjé y qué respondieron Tales y Anaximandro.",
+    rolB:"Presenten el choque Heráclito vs. Parménides y hagan la pregunta al grupo.",
+    puente:"Platón y Aristóteles intentarán resolver este choque.",
+    check:[
+      {p:"¿Qué buscaban los presocráticos con el arjé?", o:["El principio del que proviene todo","Una ley moral para la ciudad","El origen del lenguaje"], c:0},
+      {p:"¿Quién sostenía que el cambio es solo apariencia?", o:["Heráclito","Parménides","Tales"], c:1}
+    ]
+  },
+  {
+    nom:"Platón y Aristóteles", epoca:"Siglo IV a. C.", termino:"οὐσία · ousía, la sustancia",
+    idea:"Lo que de verdad es, es lo que permanece: las Ideas para Platón, la sustancia para Aristóteles.",
+    puntos:[
+      "Platón: hay dos mundos. El sensible cambia; el de las Ideas es perfecto y eterno.",
+      "Aristóteles devuelve el ser a las cosas: estudia lo que todas tienen en común por el solo hecho de ser.",
+      "Accidentes: lo que cambia (color, forma, tamaño).",
+      "Sustancia: lo que permanece y define a la cosa."
+    ],
+    ejemplo:"Hay libros grandes y chicos, de novela o de física, con mil portadas distintas. Cambian los accidentes, pero todos siguen siendo un libro.",
+    frase:"El ser se dice de muchas maneras.", autor:"Aristóteles, Metafísica",
+    pregunta:"Si a un libro le cambian la portada, el tamaño y el idioma, ¿sigue siendo el mismo? ¿Qué tendría que cambiar para que deje de ser libro?",
+    rolA:"Expliquen los dos mundos de Platón.",
+    rolB:"Expliquen sustancia y accidentes con el ejemplo del libro y hagan la pregunta.",
+    puente:"En la Edad Media se preguntarán: ¿quién le da el ser a la sustancia?",
+    check:[
+      {p:"Para Aristóteles, el color o el tamaño de una cosa son…", o:["Su sustancia","Sus accidentes","Sus Ideas"], c:1},
+      {p:"¿Dónde ubicaba Platón lo que verdaderamente es?", o:["En la materia","En el mundo de las Ideas","En el ser humano"], c:1}
+    ]
+  },
+  {
+    nom:"Edad Media: Tomás de Aquino", epoca:"Siglo XIII", termino:"ens necessarium · el Ser Necesario",
+    idea:"Todo lo que podría no existir necesita un Ser que exista por sí mismo: Dios.",
+    puntos:[
+      "Las cosas son contingentes: pueden existir o no existir.",
+      "Si todo fuera contingente, alguna vez no habría habido nada, y de la nada nada surge.",
+      "Por eso debe existir un Ser Necesario, que existe por sí mismo y da la existencia al resto.",
+      "El ser deja de ser un misterio abierto: tiene un fundamento, un creador con intención."
+    ],
+    ejemplo:"Una ampolleta encendida recibe su luz de la corriente; la corriente, de una central. Algo tiene que tener energía por sí mismo, sin recibirla de otro.",
+    frase:"Es necesario que exista algo que sea necesario por sí mismo.", autor:"Tomás de Aquino, Suma teológica (tercera vía)",
+    pregunta:"Ustedes existen, pero podrían no haber existido. ¿Qué les produce pensar eso?",
+    rolA:"Expliquen la diferencia entre contingente y necesario con el ejemplo de la ampolleta.",
+    rolB:"Lleguen a la conclusión (Dios) y adelanten que Heidegger lo criticará.",
+    puente:"Leibniz llevará la pregunta a su forma más radical.",
+    check:[
+      {p:"Algo contingente es algo que…", o:["Existe siempre","Puede existir o no existir","Nunca existió"], c:1},
+      {p:"Para Tomás de Aquino, el Ser Necesario es…", o:["Dios","La materia","El universo"], c:0}
+    ]
+  },
+  {
+    nom:"Modernidad: Leibniz y Kant", epoca:"1714 · 1781", termino:"ratio sufficiens · razón suficiente",
+    idea:"¿Por qué hay algo y no más bien nada? Y Kant advierte: existir no es una propiedad más de las cosas.",
+    puntos:[
+      "Leibniz (1714): el universo no tenía obligación de existir. Podría haber nada, pero hay mundo.",
+      "Principio de razón suficiente: nada ocurre sin una razón que lo explique.",
+      "Kant (1781): el ser no es un predicado real. Decir que algo existe no le agrega ninguna cualidad.",
+      "Cien táleros imaginados y cien reales tienen las mismas características; solo unos existen."
+    ],
+    ejemplo:"Imagina tu casa ideal con todos sus detalles. Ahora imagina esa misma casa, pero existiendo. ¿Le agregaste una ventana? No: existir no es un detalle más.",
+    frase:"¿Por qué hay algo y no más bien nada?", autor:"Leibniz, Principios de la naturaleza y de la gracia",
+    pregunta:"Si no existiera absolutamente nada, ni siquiera el vacío, ¿pueden imaginarlo?",
+    rolA:"Presenten la pregunta de Leibniz y la razón suficiente.",
+    rolB:"Expliquen a Kant con el ejemplo de la casa y hagan la pregunta.",
+    puente:"Heidegger tomará esta pregunta como la fundamental de la filosofía.",
+    check:[
+      {p:"¿Quién formuló «¿Por qué hay algo y no más bien nada?»?", o:["Kant","Sartre","Leibniz"], c:2},
+      {p:"Para Kant, decir que algo existe…", o:["No le agrega ninguna propiedad","Lo vuelve más perfecto","Lo convierte en sustancia"], c:0}
+    ]
+  },
+  {
+    nom:"Heidegger: ser y ente", epoca:"1927", termino:"Sein / Seiendes · ser y ente",
+    idea:"El ser no es una cosa más: es la luz que permite que las cosas aparezcan y tengan sentido.",
+    puntos:[
+      "Crítica: al decir «el ser es Dios», la metafísica convirtió el ser en un objeto supremo (onto-teología).",
+      "Ente: cualquier cosa concreta (una piedra, un auto, una persona). Lo estudian las ciencias.",
+      "Ser: no es un objeto, sino la condición que permite que los entes sean y se comprendan.",
+      "A esto Heidegger lo llama la diferencia ontológica."
+    ],
+    ejemplo:"En una habitación, los muebles, los libros y las personas son entes. El ser es la luz: no se puede tocar como una silla, pero sin ella nada sería visible.",
+    frase:"El lenguaje es la casa del ser.", autor:"Heidegger, Carta sobre el humanismo",
+    pregunta:"Miren a su alrededor: ¿pueden ver la luz misma, o solo lo que ella ilumina?",
+    rolA:"Expliquen la crítica a la onto-teología: el ser no es un ente supremo.",
+    rolB:"Expliquen ente y ser con la metáfora de la luz y hagan la pregunta.",
+    puente:"¿Quién puede darse cuenta de esa luz? Solo un ente: nosotros.",
+    check:[
+      {p:"Una piedra, un auto y una persona son…", o:["Entes","El ser","Accidentes"], c:0},
+      {p:"¿Qué criticó Heidegger con «onto-teología»?", o:["Que se negara a Dios","Que se convirtiera el ser en un objeto supremo","Que se estudiara la materia"], c:1}
+    ]
+  },
+  {
+    nom:"El Dasein y la existencia", epoca:"1927 – 1980", termino:"Dasein · ser-ahí",
+    idea:"Somos el único ente que se pregunta por su ser. Arrojados al mundo y sabiendo que moriremos, tenemos que elegir quiénes ser.",
+    puntos:[
+      "Dasein (ser-ahí): el ser humano, el único que se pregunta por qué existe.",
+      "Arrojados: no elegimos nacer ni dónde, pero debemos construirnos en el tiempo.",
+      "Ser-para-la-muerte y angustia: el vértigo ante la nada revela el milagro de que algo exista.",
+      "Hoy: Sartre («la existencia precede a la esencia»), Frankl (buscamos sentido), Yalom (muerte, libertad, aislamiento, sinsentido). La física explica el vacío cuántico, pero ese vacío ya es algo."
+    ],
+    ejemplo:"Nadie eligió su país, su familia ni su época: estamos arrojados. Lo que sí elegimos es qué hacemos con eso.",
+    frase:"La existencia precede a la esencia.", autor:"Jean-Paul Sartre",
+    pregunta:"Si supieran que les queda un año de vida, ¿qué cambiarían? ¿Y por qué no lo hacen ya?",
+    rolA:"Expliquen Dasein, estar arrojados, la muerte y la angustia.",
+    rolB:"Cuenten cómo se entiende hoy: Sartre, la psicología existencial y la ciencia.",
+    puente:"La estación 7 mostrará cómo se piensa el ser hoy, frente a la técnica y la IA.",
+    check:[
+      {p:"¿Qué significa Dasein?", o:["Ser supremo","Ser-ahí","Ser contingente"], c:1},
+      {p:"Para Heidegger, la angustia es…", o:["Miedo a un peligro concreto","Vértigo ante la nada","Una enfermedad que hay que evitar"], c:1}
+    ]
+  },
+  {
+    nom:"El ser hoy: técnica, IA y relación", epoca:"1953 – hoy", termino:"Gestell · la técnica como forma de mirar",
+    idea:"Hoy corremos el riesgo de ver todo, incluso a las personas, como un recurso disponible. Pensar el ser hoy es preguntarnos qué nos hace más que datos.",
+    puntos:[
+      "Heidegger (1953): la técnica moderna es una forma de mirar en la que todo aparece como recurso: el río como energía, la persona como «recurso humano».",
+      "La IA abre una pregunta nueva: una máquina que conversa, ¿es un Dasein? Desde Heidegger se diría que le falta estar arrojada, poder morir y que su existencia le importe.",
+      "Markus Gabriel (2013): existir es aparecer en un campo de sentido. Un unicornio existe en el campo de las películas, no en el de la zoología.",
+      "El ser como relación: Levinas (el rostro del otro va antes que cualquier teoría), ubuntu («soy porque somos») y el pensamiento mapuche (itrofill mongen: toda la vida, sin excepción)."
+    ],
+    ejemplo:"Para una app de delivery eres un punto en un mapa y un historial de pedidos. Para tu familia eres alguien irremplazable. El mismo ente aparece en dos campos de sentido muy distintos.",
+    frase:"Soy porque somos.", autor:"Principio ubuntu, sur de África",
+    pregunta:"Si una inteligencia artificial les dijera que tiene miedo a ser apagada, ¿la considerarían un ser que se pregunta por su ser? ¿Por qué sí o por qué no?",
+    rolA:"Expliquen la técnica según Heidegger y la pregunta por la inteligencia artificial.",
+    rolB:"Presenten los campos de sentido y el ser como relación, y hagan la pregunta al grupo.",
+    puente:"La pregunta por el ser sigue abierta: hoy se juega en cómo nos miramos unos a otros.",
+    check:[
+      {p:"Para Heidegger, la técnica moderna tiende a mostrar todo como…", o:["Una obra de arte","Un recurso disponible","Un misterio sagrado"], c:1},
+      {p:"Para Markus Gabriel, existir es…", o:["Aparecer en un campo de sentido","Poder medirse en un laboratorio","Haber sido creado por Dios"], c:0}
+    ]
+  }
+];
+
+const QUIZ = [
+  {p:"¿Por qué es tan difícil definir el ser?", o:["Porque cualquier definición ya usa la palabra «es»","Porque solo existe en griego","Porque la ciencia ya lo resolvió"], c:0, e:"Para decir «el ser es…» ya usamos el ser. Es la palabra que está debajo de todas las demás."},
+  {p:"¿Cuál es el orden histórico correcto?", o:["Aristóteles → Presocráticos → Heidegger → Tomás","Presocráticos → Aristóteles → Tomás → Leibniz → Heidegger","Tomás → Leibniz → Aristóteles → Heidegger"], c:1, e:"Del asombro griego a la sustancia, luego Dios, la razón y finalmente la existencia humana."},
+  {p:"A un libro le cambias portada, tamaño e idioma y sigue siendo libro. Lo que permanece es…", o:["Un accidente","Su sustancia","Su Idea en otro mundo"], c:1, e:"Para Aristóteles, la sustancia (ousía) permanece mientras cambian los accidentes."},
+  {p:"El argumento de la contingencia de Tomás de Aquino concluye que…", o:["Todo es contingente","Existe un Ser Necesario","El ser es cambio"], c:1, e:"Si todo puede no existir, debe haber algo que exista por sí mismo: Dios."},
+  {p:"Con los cien táleros, Kant quiere mostrar que…", o:["El dinero real vale más","Existir no le agrega propiedades a una cosa","Dios existe"], c:1, e:"El ser no es un predicado real: lo imaginado y lo real tienen las mismas características."},
+  {p:"En la metáfora de la habitación, la luz representa…", o:["Los entes","El ser","A Dios"], c:1, e:"La luz no es un mueble más, pero sin ella nada aparece: así es el ser para Heidegger."},
+  {p:"¿Por qué Heidegger llama al ser humano Dasein?", o:["Porque es el ente más perfecto","Porque es el único ente que se pregunta por el ser","Porque es inmortal"], c:1, e:"Las piedras y los animales existen; solo nosotros nos preguntamos por qué existimos."},
+  {p:"Que una empresa te mire solo como «usuario activo» es un ejemplo de…", o:["La sustancia de Aristóteles","Mirar todo como recurso disponible","El Ser Necesario"], c:1, e:"Heidegger advirtió en 1953 que la técnica moderna tiende a ver todo, incluso a las personas, como recurso."},
+  {p:"«Soy porque somos» expresa la idea de que…", o:["Solo existe lo que se puede medir","El cambio es apariencia","El ser se entiende desde los vínculos"], c:2, e:"Ubuntu, Levinas y el pensamiento mapuche entienden el ser primero como relación con otros y con la vida."},
+  {p:"Un físico dice que el universo surgió del vacío cuántico. ¿Qué responde un filósofo?", o:["Que la pregunta quedó resuelta","Que el vacío cuántico ya es algo, y la pregunta sigue abierta","Que la física no sirve"], c:1, e:"La ciencia explica cómo se comportan los entes; por qué hay entes sigue siendo una pregunta filosófica."}
+];
+
+const AGENDA = [
+  {fase:"apertura", nom:"Introducción: ¿qué es el «es»?", min:3, quien:"Presentador"},
+  {fase:"reparto", nom:"Abrir el enlace y elegir estación", min:1, quien:"Todos"},
+  {fase:"estudio", nom:"Estudio en parejas", min:6, quien:"Parejas"},
+  {fase:"exposicion", nom:"Exposición: 1 min por estación", min:9, quien:"Parejas, en orden"},
+  {fase:"sintesis", nom:"Síntesis: la luz y el Dasein", min:2, quien:"Presentador"},
+  {fase:"quiz", nom:"Quiz individual", min:3, quien:"Todos"},
+  {fase:"cierre", nom:"Cierre y pregunta para llevarse", min:2, quien:"Presentador"}
+];
+
+/* ---------- estado local ---------- */
+const CLAVE = "el-ser-dinamica-v1";
+let S = {nick:"", est:null, vista:"inicio", prep:{}, check:{}, qi:0, qr:[], abiertos:{}};
+try{ const g = JSON.parse(localStorage.getItem(CLAVE)||"null"); if(g) S = Object.assign(S, g); }catch(e){}
+function guardar(){ try{ localStorage.setItem(CLAVE, JSON.stringify(S)); }catch(e){} }
+
+let sala = null, pares = [], ultimaFase = null;
+const F = {i:0, corriendo:false, fin:0, resto:AGENDA[0].min*60, foco:null};
+
+const $ = s => document.querySelector(s);
+const esc = t => String(t).replace(/[&<>"']/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
+const puntaje = () => S.qr.filter((r,i)=>r===QUIZ[i].c).length;
+
+function ir(v){
+  S.vista = v; guardar();
+  if(v==="facilitador"){ if(location.hash!=="#facilitador") location.hash="facilitador"; }
+  else if(location.hash) history.replaceState(null,"",location.pathname+location.search);
+  render(); window.scrollTo({top:0});
+}
+document.querySelectorAll("nav [data-ir]").forEach(b=>b.addEventListener("click",()=>ir(b.dataset.ir)));
+
+/* ---------- vistas ---------- */
+function vInicio(){
+  const cuenta = i => pares.filter(p=>p.presence && p.presence.est===i).length;
+  return `<section class="vista pila">
+    <div class="pila" style="gap:8px">
+      <h1>La pregunta por el Ser</h1>
+      <p class="tenue">De los griegos a la inteligencia artificial, en siete estaciones. Cada pareja aprende una estación y la explica al grupo en un minuto.</p>
+    </div>
+    <div class="tarjeta pila">
+      <div><label for="nick">Tu nombre</label>
+      <input id="nick" type="text" autocomplete="given-name" maxlength="24" placeholder="Ej.: Camila" value="${esc(S.nick)}"></div>
+      <div>
+        <div class="etiqueta">Elige tu estación</div>
+        <p class="tenue pequeno" style="margin-bottom:10px">Dos personas por estación. Con 12 personas: cinco estaciones en pareja y dos individuales.</p>
+        <div class="estaciones">
+          ${ESTACIONES.map((e,i)=>`<button type="button" class="estacion-b" data-est="${i}" aria-pressed="${S.est===i}">
+            <span class="num">${i+1}</span><span class="nom">${esc(e.nom)}</span>
+            <span class="cuantos">${esc(e.epoca)}${sala?` · ${cuenta(i)} aquí`:""}</span></button>`).join("")}
+        </div>
+      </div>
+      <div class="fila">
+        <button type="button" class="boton sec" id="azar">Elegir al azar</button>
+        <button type="button" class="boton" id="empezar">Ir a mi estación</button>
+      </div>
+    </div>
+    <div class="tarjeta luz">
+      <div class="etiqueta">Cómo funciona</div>
+      <ul class="lista">
+        <li><b>6 min:</b> estudien su tarjeta y repartan los roles A y B.</li>
+        <li><b>1 min por pareja:</b> expliquen su estación al grupo, en orden del 1 al 7.</li>
+        <li><b>3 min:</b> quiz final individual para comprobar lo aprendido.</li>
+      </ul>
+    </div>
+    <button type="button" id="aFacil" class="tenue pequeno" style="background:none;border:none;text-align:center">Soy quien presenta: abrir el modo presentador</button>
+  </section>`;
+}
+
+function vEstacion(){
+  if(S.est===null) return `<section class="vista pila"><h2>Aún no eliges estación</h2><p class="tenue">Vuelve al inicio y elige una de las siete.</p><button type="button" class="boton" data-ir2="inicio">Elegir estación</button></section>`;
+  const e = ESTACIONES[S.est], k = S.est;
+  const prep = S.prep[k]||{}, ch = S.check[k]||{};
+  return `<section class="vista pila">
+    <div class="pila" style="gap:6px">
+      <div class="etiqueta">Estación ${k+1} de ${ESTACIONES.length} · ${esc(e.epoca)}</div>
+      <h1>${esc(e.nom)}</h1>
+      <div class="termino">${esc(e.termino)}</div>
+    </div>
+    <div class="tarjeta luz"><div class="etiqueta">La idea en una frase</div><p style="font-size:1.1rem;font-weight:600">${esc(e.idea)}</p></div>
+    <div class="tarjeta"><div class="etiqueta">Lo que hay que saber</div><ul class="lista">${e.puntos.map(p=>`<li>${esc(p)}</li>`).join("")}</ul></div>
+    <div class="tarjeta"><div class="etiqueta">Ejemplo cotidiano</div><p>${esc(e.ejemplo)}</p></div>
+    <div class="tarjeta"><blockquote>«${esc(e.frase)}»<cite>${esc(e.autor)}</cite></blockquote></div>
+    <div class="tarjeta"><div class="etiqueta">Pregunta para el grupo</div><p style="font-weight:600">${esc(e.pregunta)}</p></div>
+    <div class="tarjeta pila">
+      <div class="etiqueta">Su minuto de exposición</div>
+      <div class="roles">
+        <label class="rol"><input type="checkbox" data-prep="a" ${prep.a?"checked":""}><span><b>Persona A (30 s):</b> ${esc(e.rolA)}</span></label>
+        <label class="rol"><input type="checkbox" data-prep="b" ${prep.b?"checked":""}><span><b>Persona B (30 s):</b> ${esc(e.rolB)}</span></label>
+        <label class="rol"><input type="checkbox" data-prep="c" ${prep.c?"checked":""}><span><b>Para terminar:</b> ${esc(e.puente)}</span></label>
+      </div>
+      <p class="tenue pequeno">Marquen cada rol cuando lo tengan ensayado.</p>
+    </div>
+    <div class="tarjeta">
+      <div class="etiqueta">Comprueben que lo tienen claro</div>
+      ${e.check.map((q,qi)=>{
+        const r = ch[qi];
+        return `<div style="margin-top:${qi?18:4}px"><p style="font-weight:600">${esc(q.p)}</p><div class="opciones">
+        ${q.o.map((o,oi)=>{
+          let cls="opcion"; if(r!==undefined){ if(oi===q.c) cls+=" correcta"; else if(oi===r) cls+=" incorrecta"; }
+          return `<button type="button" class="${cls}" data-ck="${qi}" data-op="${oi}" ${r!==undefined?"disabled":""}>${esc(o)}</button>`;
+        }).join("")}</div>
+        ${r!==undefined?`<p class="retro">${r===q.c?'<b class="ok">Correcto.</b>':'<b class="no">Casi.</b> Repasen la tarjeta.'}</p>`:""}</div>`;
+      }).join("")}
+    </div>
+    <button type="button" class="boton sec" data-ir2="linea">Ver la línea completa</button>
+  </section>`;
+}
+
+function vLinea(){
+  return `<section class="vista pila">
+    <div class="pila" style="gap:6px"><h1>La línea del Ser</h1>
+    <p class="tenue">Síganla mientras cada pareja expone. Toquen una estación para ver su idea clave.</p></div>
+    <div class="linea-t">
+      ${ESTACIONES.map((e,i)=>`<div class="hito ${F.foco===i?"foco":""} ${S.abiertos[i]?"abierto":""}">
+        <button type="button" class="tarjeta" data-hito="${i}" aria-expanded="${!!S.abiertos[i]}">
+          <div class="etiqueta">${i+1} · ${esc(e.epoca)}${S.est===i?" · tu estación":""}${F.foco===i?" · exponiendo ahora":""}</div>
+          <h3>${esc(e.nom)}</h3>
+          <div class="termino" style="font-size:1rem">${esc(e.termino)}</div>
+          <div class="detalle"><p>${esc(e.idea)}</p><p class="tenue pequeno" style="margin-top:8px">${esc(e.puente)}</p></div>
+        </button></div>`).join("")}
+    </div>
+  </section>`;
+}
+
+function vQuiz(){
+  const n = QUIZ.length;
+  if(S.qi>=n){
+    const p = puntaje();
+    const msj = p>=n*0.85?"Excelente: tienes clara la historia del Ser.":p>=n*0.6?"Muy bien: repasa en la línea las preguntas que fallaste.":"Buen comienzo: vuelve a la línea y conversa con tu pareja.";
+    return `<section class="vista pila"><div class="etiqueta">Resultado</div>
+      <div class="puntaje">${p}<span style="font-size:1.6rem" class="tenue"> / ${n}</span></div>
+      <p>${msj}</p>
+      <div class="tarjeta"><div class="etiqueta">Tus respuestas</div><ul class="lista">
+      ${QUIZ.map((q,i)=>`<li>${S.qr[i]===q.c?"✓":"✗"} ${esc(q.p)}</li>`).join("")}</ul></div>
+      <div class="fila"><button type="button" class="boton sec" id="reiniciarQuiz">Responder de nuevo</button><button type="button" class="boton" data-ir2="cierre">Ir al cierre</button></div>
+    </section>`;
+  }
+  const q = QUIZ[S.qi], r = S.qr[S.qi];
+  return `<section class="vista pila">
+    <div class="pila" style="gap:8px"><div class="etiqueta">Pregunta ${S.qi+1} de ${n}</div>
+    <div class="progreso"><span style="width:${(S.qi/n)*100}%"></span></div></div>
+    <h2>${esc(q.p)}</h2>
+    <div class="opciones">${q.o.map((o,oi)=>{
+      let cls="opcion"; if(r!==undefined){ if(oi===q.c) cls+=" correcta"; else if(oi===r) cls+=" incorrecta"; }
+      return `<button type="button" class="${cls}" data-q="${oi}" ${r!==undefined?"disabled":""}>${esc(o)}</button>`;}).join("")}</div>
+    ${r!==undefined?`<div class="tarjeta"><p class="retro" style="margin:0">${r===q.c?'<b class="ok">Correcto.</b> ':'<b class="no">No era esa.</b> '}${esc(q.e)}</p></div>
+    <button type="button" class="boton" id="siguiente">${S.qi+1<n?"Siguiente":"Ver mi resultado"}</button>`:""}
+  </section>`;
+}
+
+function vCierre(){
+  return `<section class="vista pila">
+    <h1>La luz que no se ve</h1>
+    <p>Cada época apuntó a algo distinto para explicar por qué las cosas son: la naturaleza, la sustancia, Dios, la razón. Heidegger nos recordó que el ser no es una cosa más, sino la luz en la que todo aparece, y que somos nosotros quienes podemos notarla. Hoy, entre pantallas y algoritmos, esa luz depende de cómo nos miramos unos a otros.</p>
+    <div class="tarjeta"><div class="etiqueta">Cuatro ideas para llevarse</div><ul class="lista">
+      <li>El ser es lo más universal y lo más difícil de definir.</li>
+      <li>Ente es lo que existe; ser es lo que permite que exista y tenga sentido.</li>
+      <li>El ser humano es el único que se pregunta por su ser, y por eso debe elegir cómo existir.</li>
+      <li>Pensar el ser hoy es cuidar que nada ni nadie quede reducido a un recurso.</li></ul></div>
+    <div class="tarjeta luz"><div class="etiqueta">Para la semana</div>
+      <p style="font-family:var(--display);font-size:1.45rem;line-height:1.2">¿En qué momento de su vida han sentido el asombro de que el mundo, simplemente, <i>es</i>?</p></div>
+    <blockquote>«¿Por qué hay algo y no más bien nada?»<cite>Leibniz, 1714 · retomada por Heidegger como la pregunta fundamental</cite></blockquote>
+  </section>`;
+}
+
+function vFacil(){
+  const a = AGENDA[F.i];
+  const mm = Math.max(0,Math.ceil(F.resto)), m = Math.floor(mm/60), s = String(mm%60).padStart(2,"0");
+  const vivos = pares.filter(p=>p.kind==="viewer" && p.presence && p.presence.nick);
+  return `<section class="vista pila">
+    <div class="pila" style="gap:6px"><div class="etiqueta">Modo presentador · ${AGENDA.reduce((a,x)=>a+x.min,0)} minutos</div><h1>${esc(a.nom)}</h1><p class="tenue">${esc(a.quien)} · ${a.min} min</p></div>
+    <div class="tarjeta luz" style="display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap">
+      <div class="reloj" aria-live="off">${m}:${s}</div>
+      <div class="fila" style="flex:1 1 200px">
+        <button type="button" class="boton" id="relojBtn">${F.corriendo?"Pausar":"Iniciar"}</button>
+        <button type="button" class="boton sec" id="faseSig">Siguiente fase</button>
+      </div>
+    </div>
+    ${a.fase==="exposicion"?`<div class="tarjeta"><div class="etiqueta">¿Quién expone ahora?</div><div class="estaciones">
+      ${ESTACIONES.map((e,i)=>`<button type="button" class="estacion-b" data-foco="${i}" aria-pressed="${F.foco===i}"><span class="num">${i+1}</span><span class="nom">${esc(e.nom)}</span></button>`).join("")}
+      </div><p class="tenue pequeno" style="margin-top:8px">${sala?"Los teléfonos conectados resaltan la estación en su línea.":"Toca la estación para resaltarla en tu pantalla."}</p></div>`:""}
+    <div class="tarjeta"><div class="etiqueta">Agenda</div><div class="agenda">
+      ${AGENDA.map((x,i)=>`<button type="button" data-fase="${i}" ${i===F.i?'aria-current="step"':""}><span>${esc(x.nom)}</span><span class="min">${x.min} min</span></button>`).join("")}
+    </div></div>
+    <div class="tarjeta"><div class="etiqueta">Participantes conectados</div>
+      ${sala ? (vivos.length?`<table><thead><tr><th>Nombre</th><th>Estación</th><th style="text-align:right">Quiz</th></tr></thead><tbody>
+        ${vivos.map(p=>{const pr=p.presence; return `<tr><td>${esc(String(pr.nick).slice(0,24))}${p.isMe?" (tú)":""}</td><td>${typeof pr.est==="number"&&pr.est>=0&&pr.est<ESTACIONES.length?pr.est+1:"—"}</td><td class="n">${typeof pr.ptos==="number"?pr.ptos+" / "+QUIZ.length:"—"}</td></tr>`;}).join("")}
+        </tbody></table>`:`<p class="tenue">Aún no hay nadie con nombre. Aparecerán al escribirlo en el inicio.</p>`)
+      : `<p class="tenue">Esta vista no puede ver otros teléfonos. Cada persona trabaja en su propio teléfono; al final pide que levanten la mano según su puntaje del quiz.</p>`}
+    </div>
+    <button type="button" class="boton sec" data-ir2="inicio">Volver a la vista de participante</button>
+  </section>`;
+}
+
+function render(){
+  const v = S.vista;
+  $("#app").innerHTML = ({inicio:vInicio, estacion:vEstacion, linea:vLinea, quiz:vQuiz, cierre:vCierre, facilitador:vFacil}[v]||vInicio)();
+  document.querySelectorAll("nav [data-ir]").forEach(b=>{ if(b.dataset.ir===v) b.setAttribute("aria-current","page"); else b.removeAttribute("aria-current"); });
+  enlazar();
+}
+
+function enlazar(){
+  document.querySelectorAll("[data-ir2]").forEach(b=>b.onclick=()=>ir(b.dataset.ir2));
+  const nick = $("#nick");
+  if(nick) nick.oninput = ()=>{ S.nick = nick.value.trim(); guardar(); presencia(); };
+  document.querySelectorAll("[data-est]").forEach(b=>b.onclick=()=>{ S.est=+b.dataset.est; guardar(); presencia(); render(); });
+  const azar = $("#azar");
+  if(azar) azar.onclick=()=>{
+    const c = ESTACIONES.map((_,i)=>pares.filter(p=>p.presence&&p.presence.est===i&&!p.isMe).length);
+    const min = Math.min(...c), libres = c.map((x,i)=>x===min?i:-1).filter(i=>i>=0);
+    S.est = libres[Math.floor(Math.random()*libres.length)]; guardar(); presencia(); render();
+  };
+  const emp = $("#empezar"); if(emp) emp.onclick=()=>{ if(S.est===null){ emp.textContent="Primero elige una estación"; return; } ir("estacion"); };
+  const af = $("#aFacil"); if(af) af.onclick=()=>ir("facilitador");
+  document.querySelectorAll("[data-prep]").forEach(c=>c.onchange=()=>{ const k=S.est; S.prep[k]=S.prep[k]||{}; S.prep[k][c.dataset.prep]=c.checked; guardar(); });
+  document.querySelectorAll("[data-ck]").forEach(b=>b.onclick=()=>{ const k=S.est; S.check[k]=S.check[k]||{}; S.check[k][+b.dataset.ck]=+b.dataset.op; guardar(); render(); });
+  document.querySelectorAll("[data-hito]").forEach(b=>b.onclick=()=>{ const i=+b.dataset.hito; S.abiertos[i]=!S.abiertos[i]; guardar(); render(); });
+  document.querySelectorAll("[data-q]").forEach(b=>b.onclick=()=>{ S.qr[S.qi]=+b.dataset.q; guardar(); presencia(); render(); });
+  const sig = $("#siguiente"); if(sig) sig.onclick=()=>{ S.qi++; guardar(); render(); window.scrollTo({top:0}); };
+  const rq = $("#reiniciarQuiz"); if(rq) rq.onclick=()=>{ S.qi=0; S.qr=[]; guardar(); presencia(); render(); };
+  const rb = $("#relojBtn"); if(rb) rb.onclick=()=>{ if(F.corriendo){ F.resto = (F.fin-Date.now())/1000; F.corriendo=false; } else { F.fin = Date.now()+F.resto*1000; F.corriendo=true; } difundir(); render(); };
+  const fs = $("#faseSig"); if(fs) fs.onclick=()=>fijarFase(Math.min(F.i+1, AGENDA.length-1));
+  document.querySelectorAll("[data-fase]").forEach(b=>b.onclick=()=>fijarFase(+b.dataset.fase));
+  document.querySelectorAll("[data-foco]").forEach(b=>b.onclick=()=>{ F.foco = +b.dataset.foco; difundir(); render(); });
+}
+
+function fijarFase(i){
+  F.i=i; F.resto=AGENDA[i].min*60; F.fin=Date.now()+F.resto*1000;
+  F.foco = AGENDA[i].fase==="exposicion" ? 0 : null;
+  difundir(); render();
+}
+
+setInterval(()=>{
+  if(F.corriendo){
+    F.resto = (F.fin-Date.now())/1000;
+    if(F.resto<=0){ F.resto=0; F.corriendo=false; }
+    if(S.vista==="facilitador"){ const r=document.querySelector(".reloj"); if(r){ const mm=Math.ceil(F.resto); r.textContent=`${Math.floor(mm/60)}:${String(mm%60).padStart(2,"0")}`; } if(F.resto===0) render(); }
+  }
+},500);
+
+/* ---------- sala en vivo (opcional) ---------- */
+function presencia(){
+  if(!sala) return;
+  sala.presence({nick:S.nick.slice(0,24), est:S.est===null?-1:S.est, ptos:S.qr.length?puntaje():null, vista:S.vista}).catch(()=>{});
+}
+function difundir(){
+  if(!sala || S.vista!=="facilitador") return;
+  sala.emit("fase",{i:F.i, foco:F.foco, t:Date.now()}).catch(()=>{});
+}
+function recibirFase(m){
+  if(!m || m.sameTab) return;
+  const d = m.data||{}; const i = Number(d.i);
+  if(!(i>=0 && i<AGENDA.length)) return;
+  F.foco = (typeof d.foco==="number" && d.foco>=0 && d.foco<ESTACIONES.length) ? d.foco : null;
+  const fase = AGENDA[i].fase;
+  if(fase!==ultimaFase){
+    ultimaFase = fase;
+    const destino = {reparto:"inicio", estudio:"estacion", exposicion:"linea", quiz:"quiz", cierre:"cierre"}[fase];
+    if(destino && S.vista!==destino && S.vista!=="facilitador"){
+      $("#avisoTexto").textContent = "Ahora: " + AGENDA[i].nom;
+      $("#aviso").classList.remove("oculto");
+      $("#avisoIr").onclick = ()=>{ $("#aviso").classList.add("oculto"); ir(destino); };
+    }
+  }
+  if(S.vista==="linea") render();
+}
+
+(async()=>{
+  try{
+    if(!(window.claude && typeof window.claude.use==="function")) return;
+    const r = await window.claude.use("room");
+    if(!r) return;
+    sala = r;
+    sala.onConnection(c=>{
+      $("#estadoSala").classList.toggle("vivo", c);
+      $("#estadoTexto").textContent = c ? "Sala en vivo" : "Reconectando…";
+    }, ()=>{ sala=null; $("#estadoSala").classList.remove("vivo"); $("#estadoTexto").textContent="Modo individual"; });
+    sala.onPeers(ch=>{
+      pares = ch.peers;
+      if(ch.joined.length && S.vista==="facilitador") difundir();
+      if(S.vista==="inicio" || S.vista==="facilitador"){
+        const foco = document.activeElement && document.activeElement.id==="nick";
+        if(!foco) render();
+      }
+    }, ()=>{ pares=[]; });
+    sala.on("fase", recibirFase, ()=>{});
+    presencia();
+    setInterval(()=>{ if(S.vista==="facilitador") difundir(); }, 15000);
+  }catch(e){ sala=null; }
+})();
+
+if(location.hash==="#facilitador") S.vista="facilitador";
+window.addEventListener("hashchange",()=>{ if(location.hash==="#facilitador"){ S.vista="facilitador"; render(); } });
+render();
+</script>
+</body>
+</html>
