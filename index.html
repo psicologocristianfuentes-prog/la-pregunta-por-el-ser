@@ -291,7 +291,7 @@ const QUIZ = [
 
 const AGENDA = [
   {fase:"apertura", nom:"Introducción: ¿qué es el «es»?", min:3, quien:"Presentador"},
-  {fase:"reparto", nom:"Abrir el enlace y unirse al sorteo", min:1, quien:"Todos"},
+  {fase:"reparto", nom:"Abrir el enlace y elegir estación", min:1, quien:"Todos"},
   {fase:"estudio", nom:"Estudio por estación", min:6, quien:"Cada estación"},
   {fase:"exposicion", nom:"Exposición: 1 min por estación", min:9, quien:"Cada estación, en orden"},
   {fase:"sintesis", nom:"Síntesis: la luz y el Dasein", min:2, quien:"Presentador"},
@@ -301,7 +301,7 @@ const AGENDA = [
 
 /* ---------- estado local ---------- */
 const CLAVE = "el-ser-dinamica-v1";
-let S = {nick:"", est:null, vista:"inicio", prep:{}, check:{}, qi:0, qr:[], abiertos:{}, sorteo:null, borrador:null, fac:null};
+let S = {nick:"", est:null, vista:"inicio", prep:{}, check:{}, qi:0, qr:[], abiertos:{}, sorteo:null, borrador:null, fac:null, tam:{}};
 try{ const g = JSON.parse(localStorage.getItem(CLAVE)||"null"); if(g) S = Object.assign(S, g); }catch(e){}
 function guardar(){ try{ localStorage.setItem(CLAVE, JSON.stringify(S)); }catch(e){} }
 
@@ -349,6 +349,7 @@ function vInicio(){
   const cuenta = i => pares.filter(p=>p.presence && p.presence.est===i).length;
   const g = miGrupo();
   const otros = g ? g.nums.filter(x=>x!==S.sorteo.num) : [];
+  const elegida = S.est!==null ? ESTACIONES[S.est] : null;
   return `<section class="vista pila">
     <div class="pila" style="gap:8px">
       <h1>La pregunta por el Ser</h1>
@@ -364,27 +365,31 @@ function vInicio(){
           <p class="tenue pequeno">Código ${esc(S.sorteo.code)} · tu número ${S.sorteo.num}</p>
         </div>
         <div class="fila">
-          <button type="button" class="boton sec" id="salirSorteo">Cambiar código o número</button>
+          <button type="button" class="boton sec" id="salirSorteo">Elegir otra estación</button>
           <button type="button" class="boton" id="empezar">Ir a mi estación</button>
         </div>`
-      : `<div class="pila" style="gap:10px">
-          <div class="etiqueta">Únete al sorteo</div>
-          <p class="tenue pequeno">Quien presenta muestra un código. Escríbelo junto al número que te tocó (1, 2, 3…). Nadie repite estación de más y los grupos quedan parejos.</p>
-          <div class="fila">
-            <div><label for="codigo">Código</label><input id="codigo" type="text" inputmode="numeric" autocomplete="off" maxlength="7" placeholder="12-4831" value="${esc(S.borrador&&S.borrador.code||"")}"></div>
-            <div><label for="numero">Tu número</label><input id="numero" type="text" inputmode="numeric" autocomplete="off" maxlength="2" placeholder="5" value="${esc(S.borrador&&S.borrador.num||"")}"></div>
+      : `<div>
+          <div class="etiqueta">Elige tu estación</div>
+          <p class="tenue pequeno" style="margin-bottom:10px">Máximo dos o tres personas por estación. Antes de elegir, miren quién tomó cuál; si una ya está llena, elijan otra.</p>
+          <div class="estaciones">
+            ${ESTACIONES.map((e,i)=>`<button type="button" class="estacion-b" data-est="${i}" aria-pressed="${S.est===i}">
+              <span class="num">${i+1}</span><span class="nom">${esc(e.nom)}</span>
+              <span class="cuantos">${esc(e.epoca)}${sala?` · ${cuenta(i)} aquí`:""}</span></button>`).join("")}
           </div>
-          <p id="errorSorteo" class="pequeno" style="color:var(--mal)" role="alert"></p>
-          <button type="button" class="boton" id="unirse">Ver mi estación</button>
-        </div>`}
-      <details>
-        <summary class="tenue pequeno" style="cursor:pointer">Sin sorteo: elegir la estación a mano</summary>
-        <div class="estaciones" style="margin-top:10px">
-          ${ESTACIONES.map((e,i)=>`<button type="button" class="estacion-b" data-est="${i}" aria-pressed="${S.est===i}">
-            <span class="num">${i+1}</span><span class="nom">${esc(e.nom)}</span>
-            <span class="cuantos">${esc(e.epoca)}${sala?` · ${cuenta(i)} aquí`:""}</span></button>`).join("")}
         </div>
-      </details>
+        ${elegida?`<p>Elegiste la <b>estación ${S.est+1}: ${esc(elegida.nom)}</b>.</p>`:""}
+        <button type="button" class="boton" id="empezar">Ir a mi estación</button>
+        <details ${S.borrador&&S.borrador.code?"open":""}>
+          <summary class="tenue pequeno" style="cursor:pointer">¿Quién presenta hizo un sorteo? Escribe el código</summary>
+          <div class="pila" style="gap:10px;margin-top:10px">
+            <div class="fila">
+              <div><label for="codigo">Código</label><input id="codigo" type="text" inputmode="numeric" autocomplete="off" maxlength="7" placeholder="12-4831" value="${esc(S.borrador&&S.borrador.code||"")}"></div>
+              <div><label for="numero">Tu número</label><input id="numero" type="text" inputmode="numeric" autocomplete="off" maxlength="2" placeholder="5" value="${esc(S.borrador&&S.borrador.num||"")}"></div>
+            </div>
+            <p id="errorSorteo" class="pequeno" style="color:var(--mal)" role="alert"></p>
+            <button type="button" class="boton sec" id="unirse">Ver mi estación del sorteo</button>
+          </div>
+        </details>`}
     </div>
     <div class="tarjeta luz">
       <div class="etiqueta">Cómo funciona</div>
@@ -399,13 +404,17 @@ function vInicio(){
 }
 
 function rolesHTML(e, prep){
-  const g = miGrupo(), mio = g && g.est===S.est;
-  const n = mio ? g.nums.length : 0, yo = mio ? g.idx : -1;
+  const g = miGrupo(), porSorteo = g && g.est===S.est;
+  const tam = (S.tam||{})[S.est];
+  const mio = porSorteo || !!tam;
+  const n = porSorteo ? g.nums.length : (tam||0), yo = porSorteo ? g.idx : -1;
   const letra = ["A","B","C","D","E","F"];
   let aviso = "";
-  if(!mio) aviso = "Si estás solo, haz todas las partes. Si son dos, repartan A y B; si son tres, sumen la C.";
+  if(!mio) aviso = "Indiquen cuántos son en esta estación para ajustar las partes.";
   else if(n===1) aviso = "Trabajas solo: haces todas las partes en tu minuto.";
-  else aviso = `Son ${n}. Tú eres la persona <b>${letra.at(Math.min(yo,5))}</b> (el número más bajo es A).`;
+  else if(porSorteo) aviso = `Son ${n}. Tú eres la persona <b>${letra.at(Math.min(yo,5))}</b> (el número más bajo es A).`;
+  else aviso = `Son ${n}${n>=4?" o más":""}. Pónganse de acuerdo en quién toma cada letra.`;
+  const selector = porSorteo ? "" : `<div class="fila" role="group" aria-label="Cuántos son en esta estación" style="gap:8px">${[1,2,3,4].map(k=>`<button type="button" class="${tam===k?"boton":""}" data-tam="${k}" style="text-align:center;flex:1 1 60px">${k===1?"Solo yo":k===4?"4 o más":k}</button>`).join("")}</div>`;
   const tres = !mio || n>=3;
   const items = [
     {k:"a", t:n===1?"Primero (30 s)":"Persona A (" + (tres&&n>=3?"20":"30") + " s)", d:e.rolA},
@@ -414,7 +423,7 @@ function rolesHTML(e, prep){
   if(mio && n>=3) items.push({k:"c", t:"Persona C (20 s)", d:"Hace la pregunta al grupo y cierra con el puente: " + e.puente});
   else items.push({k:"c", t:"Para terminar", d:e.puente});
   if(mio && n>=4) items.push({k:"d", t:"Personas D en adelante", d:"Aportan un ejemplo propio de la vida cotidiana (máximo 15 s cada una)."});
-  return `<p class="pequeno">${aviso}</p><div class="roles">${items.map(it=>`<label class="rol"><input type="checkbox" data-prep="${it.k}" ${prep[it.k]?"checked":""}><span><b>${esc(it.t)}:</b> ${esc(it.d)}</span></label>`).join("")}</div>`;
+  return `${selector}<p class="pequeno">${aviso}</p><div class="roles">${items.map(it=>`<label class="rol"><input type="checkbox" data-prep="${it.k}" ${prep[it.k]?"checked":""}><span><b>${esc(it.t)}:</b> ${esc(it.d)}</span></label>`).join("")}</div>`;
 }
 
 function vEstacion(){
@@ -513,7 +522,7 @@ function vCierre(){
 function tarjetaSorteo(){
   const s = S.fac;
   if(!s) return `<div class="tarjeta pila"><div class="etiqueta">Sorteo de estaciones</div>
-    <p class="tenue pequeno">Escribe cuántas personas hay (sin contarte). Cada una recibe un número del 1 al total, por ejemplo según dónde está sentada.</p>
+    <p class="tenue pequeno">Opcional. Úsalo si prefieres repartir al azar en vez de que cada uno elija. Escribe cuántas personas hay (sin contarte); cada una recibe un número del 1 al total.</p>
     <div class="fila"><div><label for="nPers">Personas</label><input id="nPers" type="text" inputmode="numeric" maxlength="2" value="12"></div>
     <button type="button" class="boton" id="sortear" style="align-self:flex-end">Generar sorteo</button></div></div>`;
   const L = asignacion(s.n, s.semilla);
@@ -582,6 +591,7 @@ function enlazar(){
     S.sorteo = {code:fmtCodigo(c.n,c.semilla), num:k};
     S.est = miGrupo().est; guardar(); presencia(); render();
   };
+  document.querySelectorAll("[data-tam]").forEach(b=>b.onclick=()=>{ S.tam=S.tam||{}; S.tam[S.est]=+b.dataset.tam; guardar(); render(); });
   const ss = $("#salirSorteo"); if(ss) ss.onclick = ()=>{ S.sorteo = null; guardar(); render(); };
   const emp = $("#empezar"); if(emp) emp.onclick=()=>{ if(S.est===null){ emp.textContent="Primero elige una estación"; return; } ir("estacion"); };
   const af = $("#aFacil"); if(af) af.onclick=()=>ir("facilitador");
